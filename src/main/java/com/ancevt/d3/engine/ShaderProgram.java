@@ -1,4 +1,4 @@
-package com.ancevt.onemore.engine;
+package com.ancevt.d3.engine;
 
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.system.MemoryUtil.NULL;

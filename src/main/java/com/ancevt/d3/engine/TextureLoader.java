@@ -1,4 +1,4 @@
-package com.ancevt.onemore.engine;
+package com.ancevt.d3.engine;
 
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;

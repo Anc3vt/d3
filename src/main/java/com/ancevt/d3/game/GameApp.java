@@ -1,9 +1,9 @@
-package com.ancevt.onemore.game;
+package com.ancevt.d3.game;
 
-import com.ancevt.onemore.engine.*;
+
+import com.ancevt.d3.engine.*;
 
 public class GameApp implements Game {
-
 
     private static Engine engine;
 
@@ -23,7 +23,7 @@ public class GameApp implements Game {
             float z = (float) (Math.random() * areaSize - areaSize / 2);
             GameObject castle = createCastle("castle.obj", x, (float) (Math.random() * 5), z);
             castle.setScale(1f, (float) (Math.random() + 0.5f), 1f);
-            castle.setColor((float)Math.random(), (float)Math.random(), (float)Math.random());
+            castle.setColor((float) Math.random(), (float) Math.random(), (float) Math.random());
 
         }
     }
@@ -32,13 +32,13 @@ public class GameApp implements Game {
         // Вершины квадрата (две треугольные плоскости)
         float[] vertices = {
                 // posX, posY, posZ,   u, v,   nx, ny, nz
-                -size, 0, -size,   0, 0,   0, 1, 0,
-                size, 0, -size,   1, 0,   0, 1, 0,
-                size, 0,  size,   1, 1,   0, 1, 0,
+                -size, 0, -size, 0, 0, 0, 1, 0,
+                size, 0, -size, 1, 0, 0, 1, 0,
+                size, 0, size, 1, 1, 0, 1, 0,
 
-                -size, 0, -size,   0, 0,   0, 1, 0,
-                size, 0,  size,   1, 1,   0, 1, 0,
-                -size, 0,  size,   0, 1,   0, 1, 0,
+                -size, 0, -size, 0, 0, 0, 1, 0,
+                size, 0, size, 1, 1, 0, 1, 0,
+                -size, 0, size, 0, 1, 0, 1, 0,
         };
 
         Mesh mesh = new Mesh(vertices, 8);

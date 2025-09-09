@@ -1,4 +1,4 @@
-package com.ancevt.onemore.engine;
+package com.ancevt.d3.engine;
 
 public class DefaultShaders {
 

@@ -1,4 +1,4 @@
-package com.ancevt.onemore.engine;
+package com.ancevt.d3.engine;
 
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
