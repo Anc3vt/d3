@@ -12,6 +12,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
 
 public class Engine {
+    private final Config config;
     private Window window;
     private ShaderProgram shader;
     private Camera camera;
@@ -33,8 +34,13 @@ public class Engine {
 
     private GameObject groundObj = null; // объект, на котором стоит игрок
 
-
     private Vector3f playerSize = new Vector3f(0.1f, 0.2f, 0.1f); // ширина, высота, глубина
+
+
+    public Engine(Config config) {
+        this.config = config;
+    }
+
 
     public void run(Game game) {
         this.game = game;
@@ -44,6 +50,58 @@ public class Engine {
         initGame(game);
         loop();
         cleanup();
+    }
+
+    public void start(Application application) {
+
+        window = new Window(1280, 720, "LWJGL Multi OBJ Loader");
+        window.init();
+
+        prepareEngine();
+
+        application.init(createContext());
+
+        loop();
+
+        application.shutdown();
+    }
+
+    private void prepareEngine() {
+        camera = new Camera();
+        objects = new ArrayList<>();
+
+        // === Шейдеры ===
+        shader = new ShaderProgram();
+        shader.attachShader(DefaultShaders.VERTEX, GL_VERTEX_SHADER);
+        shader.attachShader(DefaultShaders.FRAGMENT, GL_FRAGMENT_SHADER);
+        shader.link();
+
+        glUseProgram(shader.getId());
+        glUniform1i(glGetUniformLocation(shader.getId(), "texture1"), 0);
+
+        glfwSetInputMode(window.getWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+        glfwSetCursorPosCallback(window.getWindowHandle(), (handle, xpos, ypos) -> {
+            if (firstMouse) {
+                lastMouseX = xpos;
+                lastMouseY = ypos;
+                firstMouse = false;
+            }
+
+            float dx = (float) (xpos - lastMouseX) * mouseSensitivity;
+            float dy = (float) (lastMouseY - ypos) * mouseSensitivity;
+
+            lastMouseX = xpos;
+            lastMouseY = ypos;
+
+            camera.addRotation(dx, dy);
+        });
+    }
+
+    private EngineContext createContext() {
+        EngineContext engineContext = new EngineContext(this, config);
+
+        return engineContext;
     }
 
     private void initGame(Game game) {
@@ -78,6 +136,59 @@ public class Engine {
 
             camera.addRotation(dx, dy);
         });
+    }
+
+    private void loop() {
+        float fov = (float) Math.toRadians(100.0);
+        float aspect = 1280f / 720f;
+        float zNear = 0.01f, zFar = 1000f;
+
+        while (!window.shouldClose()) {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+
+            processInput();
+            shader.use();
+
+            float time = (System.currentTimeMillis() % 100000) / 1000.0f; // <<< считаем один раз
+
+            Matrix4f projection = new Matrix4f().perspective(fov, aspect, zNear, zFar);
+            Matrix4f view = camera.getViewMatrix();
+
+            int projLoc = glGetUniformLocation(shader.getId(), "projection");
+            int viewLoc = glGetUniformLocation(shader.getId(), "view");
+            int modelLoc = glGetUniformLocation(shader.getId(), "model");
+
+            int lightPosLoc = glGetUniformLocation(shader.getId(), "lightPos");
+            int viewPosLoc = glGetUniformLocation(shader.getId(), "viewPos");
+            int lightColorLoc = glGetUniformLocation(shader.getId(), "lightColor");
+
+            try (var stack = MemoryStack.stackPush()) {
+                glUniformMatrix4fv(projLoc, false, projection.get(stack.mallocFloat(16)));
+                glUniformMatrix4fv(viewLoc, false, view.get(stack.mallocFloat(16)));
+
+                glUniform3fv(lightPosLoc, new float[]{1.2f, 1.0f, 2.0f});
+                glUniform3fv(viewPosLoc, camera.getPosition().get(stack.mallocFloat(3)));
+                glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
+
+                for (GameObject obj : objects) {
+                    Matrix4f model = obj.getModelMatrix();
+                    glUniformMatrix4fv(modelLoc, false, model.get(stack.mallocFloat(16)));
+
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, obj.getTextureId());
+
+                    int objectColorLoc = glGetUniformLocation(shader.getId(), "objectColor");
+                    glUniform3f(objectColorLoc, obj.getColor().x, obj.getColor().y, obj.getColor().z);
+
+                    // ⬇ передаём время в update
+                    obj.update(time);
+                    obj.getMesh().render();
+                }
+            }
+
+            window.update();
+        }
     }
 
     private void processInput() {
@@ -140,63 +251,6 @@ public class Engine {
             glfwSetWindowShouldClose(win, true);
         }
     }
-
-
-
-
-    private void loop() {
-        float fov = (float) Math.toRadians(100.0);
-        float aspect = 1280f / 720f;
-        float zNear = 0.01f, zFar = 1000f;
-
-        while (!window.shouldClose()) {
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glEnable(GL_DEPTH_TEST);
-
-            processInput();
-            shader.use();
-
-            float time = (System.currentTimeMillis() % 100000) / 1000.0f; // <<< считаем один раз
-
-            Matrix4f projection = new Matrix4f().perspective(fov, aspect, zNear, zFar);
-            Matrix4f view = camera.getViewMatrix();
-
-            int projLoc = glGetUniformLocation(shader.getId(), "projection");
-            int viewLoc = glGetUniformLocation(shader.getId(), "view");
-            int modelLoc = glGetUniformLocation(shader.getId(), "model");
-
-            int lightPosLoc = glGetUniformLocation(shader.getId(), "lightPos");
-            int viewPosLoc = glGetUniformLocation(shader.getId(), "viewPos");
-            int lightColorLoc = glGetUniformLocation(shader.getId(), "lightColor");
-
-            try (var stack = MemoryStack.stackPush()) {
-                glUniformMatrix4fv(projLoc, false, projection.get(stack.mallocFloat(16)));
-                glUniformMatrix4fv(viewLoc, false, view.get(stack.mallocFloat(16)));
-
-                glUniform3fv(lightPosLoc, new float[]{1.2f, 1.0f, 2.0f});
-                glUniform3fv(viewPosLoc, camera.getPosition().get(stack.mallocFloat(3)));
-                glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
-
-                for (GameObject obj : objects) {
-                    Matrix4f model = obj.getModelMatrix();
-                    glUniformMatrix4fv(modelLoc, false, model.get(stack.mallocFloat(16)));
-
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, obj.getTextureId());
-
-                    int objectColorLoc = glGetUniformLocation(shader.getId(), "objectColor");
-                    glUniform3f(objectColorLoc, obj.getColor().x, obj.getColor().y, obj.getColor().z);
-
-                    // ⬇ передаём время в update
-                    obj.update(time);
-                    obj.getMesh().render();
-                }
-            }
-
-            window.update();
-        }
-    }
-
 
     private boolean checkCollision(Vector3f newPos) {
         Vector3f half = new Vector3f(playerSize).mul(0.5f);
