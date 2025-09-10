@@ -34,12 +34,12 @@ public class Engine {
     // Engine.java
     private float velocityY = 0.0f;
     private final float gravity = -0.0005f;
-    private final float jumpStrength = 0.055f;
+    private final float jumpStrength = 0.045f;
     private boolean isGrounded = false;
 
     private GameObject groundObj = null; // объект, на котором стоит игрок
 
-    private Vector3f playerSize = new Vector3f(0.1f, 0.9f, 0.1f); // ширина, высота, глубина
+    private Vector3f playerSize = new Vector3f(0.1f, 0.7f, 0.1f); // ширина, высота, глубина
 
     public Node root;
     public Light mainLight;
@@ -71,7 +71,7 @@ public class Engine {
         camera = new Camera();
         cameraTmp = camera;
 
-        camera.getPosition().y = 10;
+        camera.getPosition().y = 30;
 
         root = new Node();
 
@@ -187,6 +187,9 @@ public class Engine {
     }
 
 
+
+    private final float stepHeight = 0.4f; // максимальная высота, на которую можно "шагнуть"
+
     private void processInput() {
         long win = window.getWindowHandle();
 
@@ -195,7 +198,7 @@ public class Engine {
 
         Vector3f moveDir = new Vector3f();
 
-        // Горизонтальное управление
+        // движение WASD
         if (glfwGetKey(win, GLFW_KEY_W) == GLFW_PRESS) moveDir.add(new Vector3f(front).mul(cameraSpeed));
         if (glfwGetKey(win, GLFW_KEY_S) == GLFW_PRESS) moveDir.add(new Vector3f(front).mul(-cameraSpeed));
         if (glfwGetKey(win, GLFW_KEY_A) == GLFW_PRESS) moveDir.add(new Vector3f(right).mul(-cameraSpeed));
@@ -203,50 +206,70 @@ public class Engine {
 
         Vector3f pos = new Vector3f(camera.getPosition());
 
-        // Прыжок
+        // прыжок
         if (glfwGetKey(win, GLFW_KEY_SPACE) == GLFW_PRESS && isGrounded) {
             velocityY = jumpStrength;
             isGrounded = false;
         }
 
-        // Применяем гравитацию
+        // гравитация
         velocityY += gravity;
         moveDir.y += velocityY;
 
-        // --- ПОШАГОВОЕ ДВИЖЕНИЕ ---
+        // --- обработка столкновений ---
         Vector3f newPos = new Vector3f(pos);
 
-        // X
+        // X движение
         newPos.x += moveDir.x;
         if (checkCollision(newPos)) {
-            newPos.x = pos.x; // отменяем X, но оставляем Y/Z
+            if (!tryStepUp(newPos, pos)) {
+                newPos.x = pos.x;
+            }
         }
 
-        // Z
+        // Z движение
         newPos.z += moveDir.z;
         if (checkCollision(newPos)) {
-            newPos.z = pos.z; // отменяем Z
+            if (!tryStepUp(newPos, pos)) {
+                newPos.z = pos.z;
+            }
         }
 
-        // Y
+        // Y движение
         newPos.y += moveDir.y;
         if (checkCollision(newPos)) {
-            if (moveDir.y < 0) { // ударились о пол
+            if (moveDir.y < 0) { // падение вниз
                 isGrounded = true;
             }
-            velocityY = 0; // сброс вертикальной скорости
-            newPos.y = pos.y; // не двигаем по Y
+            velocityY = 0;
+            newPos.y = pos.y;
         } else {
             isGrounded = false;
         }
 
         camera.getPosition().set(newPos);
 
-        // Выход
+        // выход
         if (glfwGetKey(win, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(win, true);
         }
     }
+
+    private boolean tryStepUp(Vector3f newPos, Vector3f oldPos) {
+        float originalY = newPos.y;
+
+        // пробуем приподняться на высоту до stepHeight
+        for (float dy = 0.05f; dy <= stepHeight; dy += 0.05f) {
+            newPos.y = oldPos.y + dy;
+            if (!checkCollision(newPos)) {
+                return true; // нашли место для подъёма
+            }
+        }
+
+        newPos.y = originalY;
+        return false;
+    }
+
 
     private boolean checkCollision(Vector3f newPos) {
         Vector3f half = new Vector3f(playerSize).mul(0.5f);
