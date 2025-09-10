@@ -1,6 +1,7 @@
 package com.ancevt.d3.engine.scene;
 
 import com.ancevt.d3.engine.render.Camera;
+import com.ancevt.d3.engine.render.Light;
 import com.ancevt.d3.engine.render.ShaderProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -35,6 +36,23 @@ public class RenderContext {
     public Camera getCamera() {
         return camera;
     }
+
+    public void applyLight(Light light) {
+        int lightPosLoc = glGetUniformLocation(shader.getId(), "lightPos");
+        int lightColorLoc = glGetUniformLocation(shader.getId(), "lightColor");
+        int viewPosLoc = glGetUniformLocation(shader.getId(), "viewPos");
+
+        Vector3f pos = light.getPosition();
+        Vector3f col = new Vector3f(light.getColor()).mul(light.getIntensity());
+
+        glUniform3f(lightPosLoc, pos.x, pos.y, pos.z);
+        glUniform3f(lightColorLoc, col.x, col.y, col.z);
+
+        Vector3f camPos = camera.getPosition();
+        glUniform3f(viewPosLoc, camPos.x, camPos.y, camPos.z);
+    }
+
+
 
     public void renderMesh(Mesh mesh, int textureId, Vector3f color, Matrix4f model) {
         shader.use();

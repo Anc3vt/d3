@@ -3,6 +3,7 @@ package com.ancevt.d3.engine.core;
 import com.ancevt.d3.engine.asset.AssetManager;
 import com.ancevt.d3.engine.render.Camera;
 import com.ancevt.d3.engine.render.DefaultShaders;
+import com.ancevt.d3.engine.render.Light;
 import com.ancevt.d3.engine.render.ShaderProgram;
 import com.ancevt.d3.engine.scene.*;
 import com.ancevt.d3.engine.window.Window;
@@ -38,15 +39,18 @@ public class Engine {
 
     private GameObject groundObj = null; // объект, на котором стоит игрок
 
-    private Vector3f playerSize = new Vector3f(0.1f, 0.4f, 0.1f); // ширина, высота, глубина
+    private Vector3f playerSize = new Vector3f(0.1f, 0.9f, 0.1f); // ширина, высота, глубина
 
     public Node root;
+    public Light mainLight;
+    private Application application;
 
     public Engine(LaunchConfig launchConfig) {
         this.launchConfig = launchConfig;
     }
 
     public void start(Application application) {
+        this.application = application;
         window = new Window(
                 launchConfig.getWidth(),
                 launchConfig.getHeight(),
@@ -97,6 +101,13 @@ public class Engine {
 
             camera.addRotation(dx, dy);
         });
+
+
+        mainLight = new Light(
+                new Vector3f(1.2f, 21.0f, 2.0f),
+                new Vector3f(1.0f, 1.0f, 1.0f),
+                1.0f
+        );
     }
 
     private EngineContext createContext() {
@@ -115,6 +126,7 @@ public class Engine {
         float fov = (float) Math.toRadians(70.0);
         float aspect = (float) launchConfig.getWidth() / (float) launchConfig.getHeight();
         float zNear = 0.01f, zFar = 1000f;
+
 
         while (!window.shouldClose()) {
             // Очистка экрана
@@ -160,11 +172,18 @@ public class Engine {
             }
 
             RenderContext ctxRender = new RenderContext(shader, camera, projection);
+            ctxRender.applyLight(mainLight);
+            root.render(ctxRender);
+
             root.render(ctxRender);
 
             // === Смена кадров ===
             window.update();
+
+            application.update();
         }
+
+
     }
 
 
