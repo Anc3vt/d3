@@ -15,6 +15,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
 
 public class Engine {
+    public static Skybox skybox;
     private final LaunchConfig launchConfig;
     private Window window;
     private ShaderProgram shader;
@@ -111,7 +112,7 @@ public class Engine {
     private void loop() {
         glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
 
-        float fov = (float) Math.toRadians(100.0);
+        float fov = (float) Math.toRadians(70.0);
         float aspect = (float) launchConfig.getWidth() / (float) launchConfig.getHeight();
         float zNear = 0.01f, zFar = 1000f;
 
@@ -154,6 +155,9 @@ public class Engine {
 
             root.update(time);
 
+            if (skybox != null) {
+                skybox.render(camera, projection);
+            }
 
             RenderContext ctxRender = new RenderContext(shader, camera, projection);
             root.render(ctxRender);
