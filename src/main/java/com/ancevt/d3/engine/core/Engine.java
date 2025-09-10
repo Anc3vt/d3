@@ -1,5 +1,6 @@
 package com.ancevt.d3.engine.core;
 
+import com.ancevt.d3.engine.asset.AssetManager;
 import com.ancevt.d3.engine.render.Camera;
 import com.ancevt.d3.engine.render.DefaultShaders;
 import com.ancevt.d3.engine.render.ShaderProgram;
@@ -8,9 +9,6 @@ import com.ancevt.d3.engine.window.Window;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryStack;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -21,6 +19,9 @@ public class Engine {
     private Window window;
     private ShaderProgram shader;
     private Camera camera;
+
+
+    public static Camera cameraTmp;
 
     private double lastMouseX, lastMouseY;
     private boolean firstMouse = true;
@@ -36,7 +37,7 @@ public class Engine {
 
     private GameObject groundObj = null; // объект, на котором стоит игрок
 
-    private Vector3f playerSize = new Vector3f(0.1f, 0.2f, 0.1f); // ширина, высота, глубина
+    private Vector3f playerSize = new Vector3f(0.1f, 0.4f, 0.1f); // ширина, высота, глубина
 
     public Node root;
 
@@ -63,6 +64,7 @@ public class Engine {
 
     private void prepareEngine() {
         camera = new Camera();
+        cameraTmp = camera;
 
         camera.getPosition().y = 10;
 
@@ -97,7 +99,11 @@ public class Engine {
     }
 
     private EngineContext createContext() {
-        EngineContext engineContext = new EngineContext(this, launchConfig);
+        EngineContext engineContext = new EngineContext(
+                this,
+                launchConfig,
+                new AssetManager()
+        );
 
         return engineContext;
     }
@@ -133,8 +139,8 @@ public class Engine {
             }
 
             // === Источник света ===
-            int lightPosLoc   = glGetUniformLocation(shader.getId(), "lightPos");
-            int viewPosLoc    = glGetUniformLocation(shader.getId(), "viewPos");
+            int lightPosLoc = glGetUniformLocation(shader.getId(), "lightPos");
+            int viewPosLoc = glGetUniformLocation(shader.getId(), "viewPos");
             int lightColorLoc = glGetUniformLocation(shader.getId(), "lightColor");
 
             try (var stack = MemoryStack.stackPush()) {
@@ -148,7 +154,8 @@ public class Engine {
 
             root.update(time);
 
-            RenderContext ctxRender = new RenderContext(shader, camera);
+
+            RenderContext ctxRender = new RenderContext(shader, camera, projection);
             root.render(ctxRender);
 
             // === Смена кадров ===
@@ -230,6 +237,12 @@ public class Engine {
 
     private boolean checkCollisionRecursive(Node node, AABB playerAABB) {
         if (node instanceof GameObjectNode g) {
+
+            if (!g.isCollidable()) {
+                // 🔹 игнорируем непроходимые
+                return false;
+            }
+
             Mesh mesh = g.getMesh();
             if (mesh != null) {
                 // получаем границы в мировых координатах
@@ -262,7 +275,6 @@ public class Engine {
         }
         return new AABB(min, max);
     }
-
 
 
     private Float raycastDown(Vector3f pos, GameObject obj) {

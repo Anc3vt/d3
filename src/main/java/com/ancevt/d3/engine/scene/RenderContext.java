@@ -10,16 +10,30 @@ import static org.lwjgl.opengl.GL20.*;
 public class RenderContext {
     private ShaderProgram shader;
     private Camera camera;
+    private Matrix4f projection;   // 🔹 добавляем проекцию
     private int modelLoc, viewLoc, projLoc, objectColorLoc;
 
-    public RenderContext(ShaderProgram shader, Camera camera) {
+    public RenderContext(ShaderProgram shader, Camera camera, Matrix4f projection) {
         this.shader = shader;
         this.camera = camera;
+        this.projection = projection;
 
         modelLoc = glGetUniformLocation(shader.getId(), "model");
         viewLoc = glGetUniformLocation(shader.getId(), "view");
         projLoc = glGetUniformLocation(shader.getId(), "projection");
         objectColorLoc = glGetUniformLocation(shader.getId(), "objectColor");
+    }
+
+    public Matrix4f getProjection() {
+        return projection;
+    }
+
+    public ShaderProgram getShader() {
+        return shader;
+    }
+
+    public Camera getCamera() {
+        return camera;
     }
 
     public void renderMesh(Mesh mesh, int textureId, Vector3f color, Matrix4f model) {

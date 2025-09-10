@@ -11,7 +11,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OBJLoader {
+class OBJLoader {
 
     public static OBJModel load(String resourcePath) {
         List<Vector3f> positions = new ArrayList<>();

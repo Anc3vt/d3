@@ -11,9 +11,9 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL11.GL_LINEAR;
 import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.opengl.GL30C.glGenerateMipmap;
+import static org.lwjgl.stb.STBImage.stbi_image_free;
 
 public class TextureLoader {
 
@@ -60,9 +60,10 @@ public class TextureLoader {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
 
-            STBImage.stbi_image_free(image);
+            stbi_image_free(image);
         }
         return textureId;
     }
+
 
 }

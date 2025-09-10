@@ -1,6 +1,7 @@
 package com.ancevt.d3.engine.scene;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -13,7 +14,12 @@ public class GameObjectNode extends Node {
     private int textureId;
 
     @Getter
-    private Vector3f color = new Vector3f(1,1,1);
+    private Vector3f color = new Vector3f(1, 1, 1);
+
+    @Getter
+    @Setter
+    private boolean collidable = true; // <- новое поле
+
 
     public GameObjectNode(Mesh mesh, int textureId) {
         this.mesh = mesh;
@@ -27,11 +33,15 @@ public class GameObjectNode extends Node {
         super.render(ctx);
     }
 
-    public void setColor(float r, float g, float b) { color.set(r,g,b); }
+    public void setColor(float r, float g, float b) {
+        color.set(r, g, b);
+    }
 
-    /** 🔹 Управление повторением текстуры */
+    /**
+     * 🔹 Управление повторением текстуры
+     */
     public void setTextureRepeat(float u, float v) {
-        if(mesh != null) {
+        if (mesh != null) {
             mesh.scaleUV(u, v);
         }
     }
