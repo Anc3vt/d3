@@ -24,7 +24,6 @@ public class Engine {
     private final float mouseSensitivity = 0.1f;
 
     public List<GameObject> objects;
-    private Game game;
 
     // Engine.java
     private float velocityY = 0.0f;
@@ -41,16 +40,6 @@ public class Engine {
         this.config = config;
     }
 
-
-    public void run(Game game) {
-        this.game = game;
-        window = new Window(1280, 720, "LWJGL Multi OBJ Loader");
-        window.init();
-
-        initGame(game);
-        loop();
-        cleanup();
-    }
 
     public void start(Application application) {
 
@@ -102,40 +91,6 @@ public class Engine {
         EngineContext engineContext = new EngineContext(this, config);
 
         return engineContext;
-    }
-
-    private void initGame(Game game) {
-        camera = new Camera();
-        objects = new ArrayList<>();
-
-        game.init();
-
-        // === Шейдеры ===
-        shader = new ShaderProgram();
-        shader.attachShader(DefaultShaders.VERTEX, GL_VERTEX_SHADER);
-        shader.attachShader(DefaultShaders.FRAGMENT, GL_FRAGMENT_SHADER);
-        shader.link();
-
-        glUseProgram(shader.getId());
-        glUniform1i(glGetUniformLocation(shader.getId(), "texture1"), 0);
-
-        glfwSetInputMode(window.getWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-        glfwSetCursorPosCallback(window.getWindowHandle(), (handle, xpos, ypos) -> {
-            if (firstMouse) {
-                lastMouseX = xpos;
-                lastMouseY = ypos;
-                firstMouse = false;
-            }
-
-            float dx = (float) (xpos - lastMouseX) * mouseSensitivity;
-            float dy = (float) (lastMouseY - ypos) * mouseSensitivity;
-
-            lastMouseX = xpos;
-            lastMouseY = ypos;
-
-            camera.addRotation(dx, dy);
-        });
     }
 
     private void loop() {
@@ -327,18 +282,6 @@ public class Engine {
         float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
 
         return (u >= 0) && (v >= 0) && (u + v <= 1);
-    }
-
-
-
-
-
-    private void cleanup() {
-        for (GameObject obj : objects) {
-            obj.getMesh().cleanup();
-        }
-        shader.cleanup();
-        window.cleanup();
     }
 
 
