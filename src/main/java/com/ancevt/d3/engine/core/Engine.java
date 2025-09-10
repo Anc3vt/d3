@@ -3,8 +3,7 @@ package com.ancevt.d3.engine.core;
 import com.ancevt.d3.engine.render.Camera;
 import com.ancevt.d3.engine.render.DefaultShaders;
 import com.ancevt.d3.engine.render.ShaderProgram;
-import com.ancevt.d3.engine.scene.AABB;
-import com.ancevt.d3.engine.scene.GameObject;
+import com.ancevt.d3.engine.scene.*;
 import com.ancevt.d3.engine.window.Window;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -26,10 +25,8 @@ public class Engine {
     private double lastMouseX, lastMouseY;
     private boolean firstMouse = true;
 
-    private final float cameraSpeed = 0.03f;
+    private final float cameraSpeed = 0.02f;
     private final float mouseSensitivity = 0.1f;
-
-    public List<GameObject> objects;
 
     // Engine.java
     private float velocityY = 0.0f;
@@ -41,11 +38,11 @@ public class Engine {
 
     private Vector3f playerSize = new Vector3f(0.1f, 0.2f, 0.1f); // ширина, высота, глубина
 
+    public Node root;
 
     public Engine(LaunchConfig launchConfig) {
         this.launchConfig = launchConfig;
     }
-
 
     public void start(Application application) {
         window = new Window(
@@ -66,7 +63,10 @@ public class Engine {
 
     private void prepareEngine() {
         camera = new Camera();
-        objects = new ArrayList<>();
+
+        camera.getPosition().y = 10;
+
+        root = new Node();
 
         // === Шейдеры ===
         shader = new ShaderProgram();
@@ -103,57 +103,59 @@ public class Engine {
     }
 
     private void loop() {
+        glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
+
         float fov = (float) Math.toRadians(100.0);
-        float aspect = 1280f / 720f;
+        float aspect = (float) launchConfig.getWidth() / (float) launchConfig.getHeight();
         float zNear = 0.01f, zFar = 1000f;
 
         while (!window.shouldClose()) {
+            // Очистка экрана
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glEnable(GL_DEPTH_TEST);
 
+            // Управление камерой/клавиатура/мышь
             processInput();
+
+            // Шейдер активируем
             shader.use();
 
-            float time = (System.currentTimeMillis() % 100000) / 1000.0f; // <<< считаем один раз
-
+            // === Матрицы проекции и вида ===
             Matrix4f projection = new Matrix4f().perspective(fov, aspect, zNear, zFar);
             Matrix4f view = camera.getViewMatrix();
 
             int projLoc = glGetUniformLocation(shader.getId(), "projection");
             int viewLoc = glGetUniformLocation(shader.getId(), "view");
-            int modelLoc = glGetUniformLocation(shader.getId(), "model");
-
-            int lightPosLoc = glGetUniformLocation(shader.getId(), "lightPos");
-            int viewPosLoc = glGetUniformLocation(shader.getId(), "viewPos");
-            int lightColorLoc = glGetUniformLocation(shader.getId(), "lightColor");
 
             try (var stack = MemoryStack.stackPush()) {
                 glUniformMatrix4fv(projLoc, false, projection.get(stack.mallocFloat(16)));
                 glUniformMatrix4fv(viewLoc, false, view.get(stack.mallocFloat(16)));
+            }
 
+            // === Источник света ===
+            int lightPosLoc   = glGetUniformLocation(shader.getId(), "lightPos");
+            int viewPosLoc    = glGetUniformLocation(shader.getId(), "viewPos");
+            int lightColorLoc = glGetUniformLocation(shader.getId(), "lightColor");
+
+            try (var stack = MemoryStack.stackPush()) {
                 glUniform3fv(lightPosLoc, new float[]{1.2f, 1.0f, 2.0f});
                 glUniform3fv(viewPosLoc, camera.getPosition().get(stack.mallocFloat(3)));
                 glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
-
-                for (GameObject obj : objects) {
-                    Matrix4f model = obj.getModelMatrix();
-                    glUniformMatrix4fv(modelLoc, false, model.get(stack.mallocFloat(16)));
-
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, obj.getTextureId());
-
-                    int objectColorLoc = glGetUniformLocation(shader.getId(), "objectColor");
-                    glUniform3f(objectColorLoc, obj.getColor().x, obj.getColor().y, obj.getColor().z);
-
-                    // ⬇ передаём время в update
-                    obj.update(time);
-                    obj.getMesh().render();
-                }
             }
 
+            // === Обновление и рендер всего дерева ===
+            float time = (System.currentTimeMillis() % 100000) / 1000.0f;
+
+            root.update(time);
+
+            RenderContext ctxRender = new RenderContext(shader, camera);
+            root.render(ctxRender);
+
+            // === Смена кадров ===
             window.update();
         }
     }
+
 
     private void processInput() {
         long win = window.getWindowHandle();
@@ -223,15 +225,42 @@ public class Engine {
                 new Vector3f(newPos).add(half)
         );
 
-        for (GameObject obj : objects) {
-            AABB box = obj.getBoundingBox();
-            if (playerAABB.min.x <= box.max.x && playerAABB.max.x >= box.min.x &&
-                    playerAABB.min.y <= box.max.y && playerAABB.max.y >= box.min.y &&
-                    playerAABB.min.z <= box.max.z && playerAABB.max.z >= box.min.z) {
-                return true;
+        return checkCollisionRecursive(root, playerAABB);
+    }
+
+    private boolean checkCollisionRecursive(Node node, AABB playerAABB) {
+        if (node instanceof GameObjectNode g) {
+            Mesh mesh = g.getMesh();
+            if (mesh != null) {
+                // получаем границы в мировых координатах
+                AABB box = calculateBoundingBox(g);
+                if (playerAABB.min.x <= box.max.x && playerAABB.max.x >= box.min.x &&
+                        playerAABB.min.y <= box.max.y && playerAABB.max.y >= box.min.y &&
+                        playerAABB.min.z <= box.max.z && playerAABB.max.z >= box.min.z) {
+                    return true;
+                }
             }
         }
+
+        for (Node child : node.getChildren()) {
+            if (checkCollisionRecursive(child, playerAABB)) return true;
+        }
         return false;
+    }
+
+    private AABB calculateBoundingBox(GameObjectNode g) {
+        Vector3f min = new Vector3f(Float.POSITIVE_INFINITY);
+        Vector3f max = new Vector3f(Float.NEGATIVE_INFINITY);
+
+        Matrix4f model = g.getWorldTransform();
+        for (Vector3f[] tri : g.getMesh().getTriangles()) {
+            for (Vector3f v : tri) {
+                Vector3f worldPos = v.mulPosition(model, new Vector3f());
+                min.min(worldPos);
+                max.max(worldPos);
+            }
+        }
+        return new AABB(min, max);
     }
 
 

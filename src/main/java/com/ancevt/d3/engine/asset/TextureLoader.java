@@ -12,11 +12,12 @@ import java.nio.IntBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL11.GL_LINEAR;
+import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.opengl.GL30C.glGenerateMipmap;
 
 public class TextureLoader {
 
-    public static int loadTextureFromResources(String resourcePath) {
+    public static int loadTextureFromResources(String resourcePath, boolean repeat) {
         ByteBuffer imageBuffer;
         try (InputStream in = Engine.class.getClassLoader().getResourceAsStream(resourcePath)) {
             if (in == null) {
@@ -50,11 +51,18 @@ public class TextureLoader {
                     GL_RGBA, GL_UNSIGNED_BYTE, image);
             glGenerateMipmap(GL_TEXTURE_2D);
 
+            // фильтрация
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            // управление повторением
+            int wrap = repeat ? GL_REPEAT : GL_CLAMP_TO_EDGE;
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
 
             STBImage.stbi_image_free(image);
         }
         return textureId;
     }
+
 }

@@ -13,6 +13,7 @@ public class Mesh {
     private final int vaoId;
     private final int vboId;
     private final int vertexCount;
+    private final int stride = 8; // xyz, uv, normal
 
     public Mesh(float[] vertices, int stride) {
         vertexCount = vertices.length / stride;
@@ -27,17 +28,17 @@ public class Mesh {
         glBindBuffer(GL_ARRAY_BUFFER, vboId);
         glBufferData(GL_ARRAY_BUFFER, buffer, GL_STATIC_DRAW);
 
-        // --- position (x,y,z) ---
+        // position
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, false, stride * Float.BYTES, 0);
 
-        // --- texCoord (u,v), если stride >= 5 ---
+        // texCoord
         if (stride >= 5) {
             glEnableVertexAttribArray(1);
             glVertexAttribPointer(1, 2, GL_FLOAT, false, stride * Float.BYTES, 3 * Float.BYTES);
         }
 
-        // --- normal (nx,ny,nz), если stride >= 8 ---
+        // normal
         if (stride >= 8) {
             glEnableVertexAttribArray(2);
             glVertexAttribPointer(2, 3, GL_FLOAT, false, stride * Float.BYTES, 5 * Float.BYTES);
@@ -62,15 +63,15 @@ public class Mesh {
     public List<Vector3f[]> getTriangles() {
         List<Vector3f[]> tris = new ArrayList<>();
 
-        FloatBuffer buffer = MemoryUtil.memAllocFloat(vertexCount * 8); // stride = 8
+        FloatBuffer buffer = MemoryUtil.memAllocFloat(vertexCount * stride);
         glBindBuffer(GL_ARRAY_BUFFER, vboId);
         glGetBufferSubData(GL_ARRAY_BUFFER, 0, buffer);
 
-        float[] verts = new float[vertexCount * 8];
+        float[] verts = new float[vertexCount * stride];
         buffer.get(verts);
         MemoryUtil.memFree(buffer);
 
-        for (int i = 0; i < verts.length; i += 24) { // 3 вершины по 8 float
+        for (int i = 0; i < verts.length; i += stride * 3) {
             Vector3f v1 = new Vector3f(verts[i],     verts[i + 1],  verts[i + 2]);
             Vector3f v2 = new Vector3f(verts[i + 8], verts[i + 9],  verts[i + 10]);
             Vector3f v3 = new Vector3f(verts[i + 16],verts[i + 17], verts[i + 18]);
@@ -80,5 +81,27 @@ public class Mesh {
         return tris;
     }
 
+    /** 🔹 Масштабирует UV (повторение текстуры) */
+    public void scaleUV(float uScale, float vScale) {
+        FloatBuffer buffer = MemoryUtil.memAllocFloat(vertexCount * stride);
+        glBindBuffer(GL_ARRAY_BUFFER, vboId);
+        glGetBufferSubData(GL_ARRAY_BUFFER, 0, buffer);
 
+        float[] verts = new float[vertexCount * stride];
+        buffer.get(verts);
+        MemoryUtil.memFree(buffer);
+
+        for (int i = 0; i < verts.length; i += stride) {
+            verts[i + 3] *= uScale; // U
+            verts[i + 4] *= vScale; // V
+        }
+
+        FloatBuffer newBuffer = MemoryUtil.memAllocFloat(verts.length);
+        newBuffer.put(verts).flip();
+        glBindBuffer(GL_ARRAY_BUFFER, vboId);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, newBuffer);
+        MemoryUtil.memFree(newBuffer);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
 }

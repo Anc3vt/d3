@@ -56,7 +56,15 @@ public class OBJLoader {
                         int normIndex = parts.length > 2 ? Integer.parseInt(parts[2]) - 1 : -1;
 
                         Vector3f pos = positions.get(posIndex);
-                        Vector2f tex = texIndex >= 0 ? texCoords.get(texIndex) : new Vector2f();
+                        Vector2f tex;
+                        if (texIndex >= 0 && texIndex < texCoords.size() && texCoords.size() > 1) {
+                            // использовать UV только если их несколько
+                            tex = texCoords.get(texIndex);
+                        } else {
+                            // генерим UV по X и Y, чтобы текстура легла как кирпич
+                            tex = new Vector2f(pos.x * 0.2f, pos.y * 0.2f);
+                        }
+
                         Vector3f norm = normIndex >= 0 ? normals.get(normIndex) : new Vector3f(0, 0, 1);
 
                         // posXYZ (3) + texUV (2) + normXYZ (3) = stride 8
