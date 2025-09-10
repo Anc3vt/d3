@@ -1,4 +1,4 @@
-package com.ancevt.d3.engine;
+package com.ancevt.d3.engine.scene;
 
 import org.joml.Vector3f;
 

@@ -1,4 +1,4 @@
-package com.ancevt.d3.engine;
+package com.ancevt.d3.engine.scene;
 
 import lombok.Getter;
 import org.joml.Matrix4f;

@@ -1,5 +1,11 @@
-package com.ancevt.d3.engine;
+package com.ancevt.d3.engine.core;
 
+import com.ancevt.d3.engine.render.Camera;
+import com.ancevt.d3.engine.render.DefaultShaders;
+import com.ancevt.d3.engine.render.ShaderProgram;
+import com.ancevt.d3.engine.scene.AABB;
+import com.ancevt.d3.engine.scene.GameObject;
+import com.ancevt.d3.engine.window.Window;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryStack;
@@ -12,7 +18,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
 
 public class Engine {
-    private final Config config;
+    private final LaunchConfig launchConfig;
     private Window window;
     private ShaderProgram shader;
     private Camera camera;
@@ -36,14 +42,17 @@ public class Engine {
     private Vector3f playerSize = new Vector3f(0.1f, 0.2f, 0.1f); // ширина, высота, глубина
 
 
-    public Engine(Config config) {
-        this.config = config;
+    public Engine(LaunchConfig launchConfig) {
+        this.launchConfig = launchConfig;
     }
 
 
     public void start(Application application) {
-
-        window = new Window(1280, 720, "LWJGL Multi OBJ Loader");
+        window = new Window(
+                launchConfig.getWidth(),
+                launchConfig.getHeight(),
+                launchConfig.getTitle()
+        );
         window.init();
 
         prepareEngine();
@@ -88,7 +97,7 @@ public class Engine {
     }
 
     private EngineContext createContext() {
-        EngineContext engineContext = new EngineContext(this, config);
+        EngineContext engineContext = new EngineContext(this, launchConfig);
 
         return engineContext;
     }

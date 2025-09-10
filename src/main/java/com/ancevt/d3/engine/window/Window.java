@@ -1,4 +1,4 @@
-package com.ancevt.d3.engine;
+package com.ancevt.d3.engine.window;
 
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;

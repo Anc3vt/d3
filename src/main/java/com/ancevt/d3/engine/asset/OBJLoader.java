@@ -1,5 +1,6 @@
-package com.ancevt.d3.engine;
+package com.ancevt.d3.engine.asset;
 
+import com.ancevt.d3.engine.scene.Mesh;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 

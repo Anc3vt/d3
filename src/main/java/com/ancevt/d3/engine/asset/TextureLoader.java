@@ -1,5 +1,6 @@
-package com.ancevt.d3.engine;
+package com.ancevt.d3.engine.asset;
 
+import com.ancevt.d3.engine.core.Engine;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;

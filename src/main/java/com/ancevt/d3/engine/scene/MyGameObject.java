@@ -1,4 +1,4 @@
-package com.ancevt.d3.engine;
+package com.ancevt.d3.engine.scene;
 
 public class MyGameObject extends GameObject {
 

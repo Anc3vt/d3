@@ -1,4 +1,4 @@
-package com.ancevt.d3.engine;
+package com.ancevt.d3.engine.render;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
