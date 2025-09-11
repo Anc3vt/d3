@@ -28,18 +28,18 @@ public class Engine {
     private double lastMouseX, lastMouseY;
     private boolean firstMouse = true;
 
-    private final float cameraSpeed = 0.02f;
+    private final float cameraSpeed = 0.03f;
     private final float mouseSensitivity = 0.1f;
 
     // Engine.java
     private float velocityY = 0.0f;
     private final float gravity = -0.0005f;
-    private final float jumpStrength = 0.045f;
+    private final float jumpStrength = 0.055f;
     private boolean isGrounded = false;
 
     private GameObject groundObj = null; // объект, на котором стоит игрок
 
-    private Vector3f playerSize = new Vector3f(0.1f, 0.7f, 0.1f); // ширина, высота, глубина
+    private Vector3f playerSize = new Vector3f(0.1f, 1.2f, 0.1f); // ширина, высота, глубина
 
     public Node root;
     public Light mainLight;
@@ -220,6 +220,7 @@ public class Engine {
         if (glfwGetKey(win, GLFW_KEY_A) == GLFW_PRESS) moveDir.add(new Vector3f(right).mul(-cameraSpeed));
         if (glfwGetKey(win, GLFW_KEY_D) == GLFW_PRESS) moveDir.add(new Vector3f(right).mul(cameraSpeed));
 
+
         Vector3f pos = new Vector3f(camera.getPosition());
 
         // прыжок
@@ -234,6 +235,11 @@ public class Engine {
 
         // --- обработка столкновений ---
         Vector3f newPos = new Vector3f(pos);
+
+        if (glfwGetKey(win, GLFW_KEY_R) == GLFW_PRESS) {
+            newPos.set(0, 40, 0);
+            velocityY = 0;
+        }
 
         // X движение
         newPos.x += moveDir.x;
