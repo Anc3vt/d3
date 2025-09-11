@@ -113,4 +113,16 @@ public class Mesh {
         MemoryUtil.memFree(newBuffer);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
+
+    public float[] getVertices() {
+        return originalVertices;
+    }
+
+    public int getStride() {
+        return stride;
+    }
+
+    public int getVertexCount() {
+        return vertexCount;
+    }
 }

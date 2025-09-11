@@ -45,6 +45,10 @@ public class Engine {
     public Light mainLight;
     private Application application;
 
+    private int frames = 0;
+    private long lastTime = System.currentTimeMillis();
+    private int fps = 0;
+
     public Engine(LaunchConfig launchConfig) {
         this.launchConfig = launchConfig;
     }
@@ -180,6 +184,18 @@ public class Engine {
             // === Смена кадров ===
             window.update();
 
+            frames++;
+            long now = System.currentTimeMillis();
+            if (now - lastTime >= 1000) { // раз в секунду
+                fps = frames;
+                frames = 0;
+                lastTime = now;
+
+                // обновляем заголовок окна
+                glfwSetWindowTitle(window.getWindowHandle(),
+                        launchConfig.getTitle() + " | FPS: " + fps);
+            }
+
             application.update();
         }
 
@@ -237,15 +253,28 @@ public class Engine {
 
         // Y движение
         newPos.y += moveDir.y;
+
+// проверяем пересечение с потолком/стеной
         if (checkCollision(newPos)) {
-            if (moveDir.y < 0) { // падение вниз
+            if (moveDir.y < 0) {
                 isGrounded = true;
             }
             velocityY = 0;
             newPos.y = pos.y;
         } else {
-            isGrounded = false;
+            // проверяем, есть ли пол под ногами
+            Float groundY = findGroundBelow(newPos);
+            if (groundY != null && newPos.y <= groundY + 0.01f) {
+                // стоим на плитке
+                newPos.y = groundY;
+                isGrounded = true;
+                velocityY = 0;
+            } else {
+                // свободное падение
+                isGrounded = false;
+            }
         }
+
 
         camera.getPosition().set(newPos);
 
@@ -254,6 +283,28 @@ public class Engine {
             glfwSetWindowShouldClose(win, true);
         }
     }
+
+    private Float findGroundBelow(Vector3f pos) {
+        float closest = Float.NEGATIVE_INFINITY;
+
+        // проходим по всем groundColliders
+        for (Node child : root.getChildren()) {
+            if (child instanceof MazeNode maze) {
+                for (AABB box : maze.getColliders()) {
+                    if (pos.x >= box.min.x && pos.x <= box.max.x &&
+                            pos.z >= box.min.z && pos.z <= box.max.z) {
+                        // нашли плитку под ногами
+                        if (box.max.y > closest && box.max.y <= pos.y) {
+                            closest = box.max.y;
+                        }
+                    }
+                }
+            }
+        }
+
+        return closest == Float.NEGATIVE_INFINITY ? null : closest;
+    }
+
 
     private boolean tryStepUp(Vector3f newPos, Vector3f oldPos) {
         float originalY = newPos.y;
@@ -282,16 +333,17 @@ public class Engine {
     }
 
     private boolean checkCollisionRecursive(Node node, AABB playerAABB) {
-        if (node instanceof GameObjectNode g) {
-
-            if (!g.isCollidable()) {
-                // 🔹 игнорируем непроходимые
-                return false;
+        if (node instanceof MazeNode maze) {
+            // Проверяем по кубикам
+            if (maze.checkCollision(playerAABB)) {
+                return true;
             }
+        } else if (node instanceof GameObjectNode g) {
+            if (!g.isCollidable()) return false;
 
+            // Здесь оставляем bounding box только для обычных объектов
             Mesh mesh = g.getMesh();
             if (mesh != null) {
-                // получаем границы в мировых координатах
                 AABB box = calculateBoundingBox(g);
                 if (playerAABB.min.x <= box.max.x && playerAABB.max.x >= box.min.x &&
                         playerAABB.min.y <= box.max.y && playerAABB.max.y >= box.min.y &&
@@ -306,6 +358,8 @@ public class Engine {
         }
         return false;
     }
+
+
 
     private AABB calculateBoundingBox(GameObjectNode g) {
         Vector3f min = new Vector3f(Float.POSITIVE_INFINITY);

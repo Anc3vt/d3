@@ -106,4 +106,63 @@ public class MeshFactory {
         };
         return new Mesh(vertices, 3);
     }
+
+    public static Mesh createFloorTileMesh(float size, float thickness) {
+        float hs = size / 2.0f;
+        float ht = thickness / 2.0f; // половина толщины
+
+        float[] vertices = {
+                // Верх
+                -hs,  ht, -hs, 0, 0, 0, 1, 0,
+                hs,  ht, -hs, 1, 0, 0, 1, 0,
+                hs,  ht,  hs, 1, 1, 0, 1, 0,
+                hs,  ht,  hs, 1, 1, 0, 1, 0,
+                -hs,  ht,  hs, 0, 1, 0, 1, 0,
+                -hs,  ht, -hs, 0, 0, 0, 1, 0,
+
+                // Низ
+                -hs, -ht, -hs, 0, 0, 0, -1, 0,
+                hs, -ht, -hs, 1, 0, 0, -1, 0,
+                hs, -ht,  hs, 1, 1, 0, -1, 0,
+                hs, -ht,  hs, 1, 1, 0, -1, 0,
+                -hs, -ht,  hs, 0, 1, 0, -1, 0,
+                -hs, -ht, -hs, 0, 0, 0, -1, 0,
+
+                // Передняя грань
+                -hs, -ht,  hs, 0, 0, 0, 0, 1,
+                hs, -ht,  hs, 1, 0, 0, 0, 1,
+                hs,  ht,  hs, 1, 1, 0, 0, 1,
+                hs,  ht,  hs, 1, 1, 0, 0, 1,
+                -hs,  ht,  hs, 0, 1, 0, 0, 1,
+                -hs, -ht,  hs, 0, 0, 0, 0, 1,
+
+                // Задняя грань
+                -hs, -ht, -hs, 0, 0, 0, 0, -1,
+                hs, -ht, -hs, 1, 0, 0, 0, -1,
+                hs,  ht, -hs, 1, 1, 0, 0, -1,
+                hs,  ht, -hs, 1, 1, 0, 0, -1,
+                -hs,  ht, -hs, 0, 1, 0, 0, -1,
+                -hs, -ht, -hs, 0, 0, 0, 0, -1,
+
+                // Левая грань
+                -hs,  ht,  hs, 1, 0, -1, 0, 0,
+                -hs,  ht, -hs, 1, 1, -1, 0, 0,
+                -hs, -ht, -hs, 0, 1, -1, 0, 0,
+                -hs, -ht, -hs, 0, 1, -1, 0, 0,
+                -hs, -ht,  hs, 0, 0, -1, 0, 0,
+                -hs,  ht,  hs, 1, 0, -1, 0, 0,
+
+                // Правая грань
+                hs,  ht,  hs, 1, 0, 1, 0, 0,
+                hs,  ht, -hs, 1, 1, 1, 0, 0,
+                hs, -ht, -hs, 0, 1, 1, 0, 0,
+                hs, -ht, -hs, 0, 1, 1, 0, 0,
+                hs, -ht,  hs, 0, 0, 1, 0, 0,
+                hs,  ht,  hs, 1, 0, 1, 0, 0
+        };
+
+        return new Mesh(vertices, 8);
+    }
+
+
 }
